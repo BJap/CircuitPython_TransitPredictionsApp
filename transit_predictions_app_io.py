@@ -34,9 +34,9 @@ from transit_predictions_511 import TransitPredictions511
 PANEL_WIDTH = 64
 PANEL_HEIGHT = 32
 
-COLOR_SEPARATOR = 0x0055FF
-COLOR_LINE_TEXT = 0xFF5500
-COLOR_PREDICTION_TEXT = 0x005500
+COLOR_SEPARATOR = 0x00071F
+COLOR_LINE_TEXT = 0x4F1400
+COLOR_PREDICTION_TEXT = 0x001800
 
 TEXT_FONT = 'fonts/5x7.bdf'
 TEXT_FONT_WIDTH = 5
@@ -118,8 +118,10 @@ def get_display():
     g.append(line4)
 
     # Matrix Portal S3 (ESP32-S3)
-    display = Matrix().display
+    display = Matrix(bit_depth=6).display
     display.refresh(minimum_frames_per_second=0)
+    # change this to 180 to plug power in from the left rather than the right
+    display.rotation = 0
     display.show(g)
 
     return Sign(display, [line1, line2, line3, line4])

@@ -123,8 +123,8 @@ class JsonHandler:
                 # Return how many seconds until the next arrival
                 return int((prediction - now).seconds)
 
-        # There are no predictions of interest, return 0 seconds until the next arrival
-        return 0
+        # There are no predictions of interest, return None
+        return None
 
 
 class Route:
@@ -178,7 +178,7 @@ class TransitApi:
         :param parameters: the parameters to use for the request
         :return: the completed url
         """
-        
+
         return f'https://{BASE_URL}/transit{command}?api_key={self.__api_key}&{parameters}&format=json'
 
     def predictions_for_stop_code(self, agency, stop_code):
@@ -283,7 +283,7 @@ class TransitPredictions511:
         print(f'Getting predictions for agency {self.__agency} for stop_code {self.__stop_code}')
 
         self.__poll()
-        
+
         # Polling failed
         if not self.__data:
             return ['Network Error', f'{self.__status_code}', f'{self.__reason}']
@@ -310,11 +310,11 @@ class TransitPredictions511:
                     route_predictions = ' '.join(route.predictions[:n])
 
                     prediction_text.append(route_predictions)
-        
+
         if prediction_text:
             for text in prediction_text:
                 print(text)
-                
+
             print('')
         else:
             print('No predictions available\n')
@@ -327,13 +327,18 @@ class TransitPredictions511:
 
         :return: the minimum time, the time until the next transit arrives, or the maximum time
         """
-        
+
         # Polling failed
         if not self.__data:
             return ERROR_REFRESH_SEC
 
-        seconds_soonest = int(JsonHandler.prediction_seconds_soonest(self.__data, self.__route_codes, self.__direction))
-        
+        seconds_soonest = JsonHandler.prediction_seconds_soonest(self.__data, self.__route_codes, self.__direction)
+
+        if not seconds_soonest:
+            print('There are no desired transit options arriving soon\n')
+
+            return MAX_REFRESH_SEC
+
         print(f'The next desired transit option arrives in {seconds_soonest} seconds\n')
 
         return max(min(seconds_soonest, MAX_REFRESH_SEC), MIN_REFRESH_SEC)
