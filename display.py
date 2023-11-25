@@ -36,6 +36,15 @@ class Sign:
         self.__display = display
         self.__lines = lines
 
+    def get_display(self):
+        """
+        Gets the display object used to display lines for additional
+        configuration by a controller if needed.
+
+        :return: the display
+        """
+        return self.__display
+
     def show(self, text):
         """
         Shows the provided text.

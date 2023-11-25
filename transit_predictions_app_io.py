@@ -1,9 +1,9 @@
 """
-This file is used to provide a model and view for IO for the TransitPredictionsApp.
-These are made to be swappable so the end user can configure the app to work
-with different prediction APIs and display devices. Replace with any
-self-written file that matches the API and hardware used if not the same as
-below.
+This file is used to provide a model view and controller for IO for the
+TransitPredictionsApp. These are made to be swappable so the end user can
+configure the app to work with different prediction APIs and display
+devices. Replace with any self-written file that matches the API and
+hardware used if not the same as below.
 
 This configuration is set to use the 511.org API with a 64x32 RGB LED Matrix
 powered by a Matrix Portal S3 (ESP32-S3).
@@ -24,88 +24,62 @@ from os import getenv
 # libs
 from adafruit_bitmap_font import bitmap_font
 from adafruit_display_text import label
-from adafruit_display_shapes.line import Line
 from adafruit_matrixportal.matrix import Matrix
 
 # local
 from display import Sign
+from transit_api_511 import TransitApi
 from transit_predictions_511 import TransitPredictions511
 
 PANEL_WIDTH = 64
 PANEL_HEIGHT = 32
 
-COLOR_SEPARATOR = 0x00071F
 COLOR_LINE_TEXT = 0x4F1400
-COLOR_PREDICTION_TEXT = 0x001800
+
+MAX_PREDICTIONS = 2
 
 TEXT_FONT = 'fonts/5x7.bdf'
 TEXT_FONT_WIDTH = 5
 TEXT_FONT_HEIGHT = 7
 
 
-def get_source(requests):
-    """
-    Gets the source object used to generate predictions. The source needs
-    to have two methods:
-        get_predictions(max_per_route: int)
-    and
-        get_refresh_interval()
-
-    :param requests: the requests object with which to fetch predictions
-    :return: the predictions object
-    """
-
-    return TransitPredictions511(
-        requests,
-        getenv('511_API_KEY'),  # api_key
-        getenv('511_TRANSIT_AGENCY'),  # agency
-        getenv('511_TRANSIT_STOP_CODE'),  # stop_code
-        getenv('511_TRANSIT_ROUTE_CODES').split(','),  # route_codes
-        getenv('511_TRANSIT_DIRECTION'),  # direction
-        3  # max_predictions
-    )
-
-
 def get_display():
     """
     Gets the display that will show the predictions. The source needs to
     have one method:
-        show(text: [str]
+        show(text: [str])
 
     :return: the display object
     """
 
     font = bitmap_font.load_font(TEXT_FONT)
     
-    # Transit line 1
+    # Transit line 1 and predictions
     line1 = label.Label(font)
     line1.color = COLOR_LINE_TEXT
     line1.text = 'Predictions'
     line1.x = 0
     line1.y = 3
     
-    # Prediction line 1
+    # Transit line 2 and predictions
     line2 = label.Label(font)
-    line2.color = COLOR_PREDICTION_TEXT
+    line2.color = COLOR_LINE_TEXT
     line2.text = 'for SF MUNI'
     line2.x = 0
     line2.y = line1.y + TEXT_FONT_HEIGHT + 1
     
     middle = int(PANEL_HEIGHT / 2)
     
-    # Separator line
-    separator = Line(0, middle - 1, PANEL_WIDTH, middle - 1, COLOR_SEPARATOR)
-    
-    # Transit line 2
+    # Transit line 3 and predictions
     line3 = label.Label(font)
     line3.color = COLOR_LINE_TEXT
     line3.text = 'using API'
     line3.x = 0
-    line3.y = middle + 4
+    line3.y = middle + 3
     
-    # Prediction line 2
+    # Transit line 4 and predictions
     line4 = label.Label(font)
-    line4.color = COLOR_PREDICTION_TEXT
+    line4.color = COLOR_LINE_TEXT
     line4.text = '511.org'
     line4.x = 0
     line4.y = line3.y + TEXT_FONT_HEIGHT + 1
@@ -113,7 +87,6 @@ def get_display():
     g = Group()
     g.append(line1)
     g.append(line2)
-    g.append(separator)
     g.append(line3)
     g.append(line4)
 
@@ -125,3 +98,36 @@ def get_display():
     display.show(g)
 
     return Sign(display, [line1, line2, line3, line4])
+
+
+def get_source(requests):
+    """
+    Gets the source object used to fetch and model predictions.
+
+    :param requests: the requests object with which to fetch predictions
+    :return: the source object
+    """
+
+    return TransitApi(requests, getenv('511_API_KEY'), 'json')
+
+
+def get_controller(display, source):
+    """
+        Gets the controller used to fetch and display predictions. The source needs
+        to have one method to update the info and return when to update next (in seconds):
+            update(): int
+
+    :param requests: the requests object with which to fetch predictions
+    :return: the predictions controller object
+    """
+
+    return TransitPredictions511(
+        display,
+        source,
+        getenv('511_TRANSIT_AGENCY'),  # agency
+        getenv('511_TRANSIT_STOP_CODE'),  # stop_code
+        getenv('511_TRANSIT_ROUTE_CODES').split(','),  # route_codes
+        getenv('511_TRANSIT_DIRECTION'),  # direction
+        MAX_PREDICTIONS  # max_predictions
+    )
+

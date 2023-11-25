@@ -15,13 +15,16 @@ class TransitPredictionsApp:
     
     def __init__(self, requests):
         """
-        Construct a new 'TransitPredictionsApp' object using a data source and output display.
+        Construct a new 'TransitPredictionsApp' object using a data source and output display
+        with a controller.
 
         :param requests: the requests object with which to fetch predictions
         """
         
-        self.__display = transit_predictions_app_io.get_display()
-        self.__source = transit_predictions_app_io.get_source(requests)
+        display = transit_predictions_app_io.get_display()
+        source = transit_predictions_app_io.get_source(requests)
+
+        self.__controller = transit_predictions_app_io.get_controller(display, source)
 
     def run(self):
         """
@@ -29,10 +32,7 @@ class TransitPredictionsApp:
         """
         
         while True:
-            predictions = self.__source.get_predictions()
-            wait = self.__source.get_refresh_interval()
-
-            self.__display.show(predictions)
+            wait = self.__controller.update()
 
             print(f'Refreshing predictions in {wait} seconds\n')
 

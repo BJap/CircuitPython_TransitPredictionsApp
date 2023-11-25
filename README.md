@@ -21,7 +21,7 @@ Prediction App That Displays Transit Predictions on a Display Panel
 7. Make a `fonts` folder in the root directory of the board and copy the font file into it.
 8. Make a `lib` folder (if it does not exist yet) in the root directory of the boardCopy the following **Adafruit 8.x CircuitPython** libraries into it:
     - `adafruit_bitmap_font` (copy the folder)
-    - `adafruit_display_shapes` (copy the folder)
+    - `adafruit_display_shapes` (copy the folder) (legacy)
     - `adafruit_display_text` (copy the folder)
     - `adafruit_matrixportal` (copy the folder)
     - `adafruit_datetime.mpy` (copy the file)
@@ -32,6 +32,10 @@ Prediction App That Displays Transit Predictions on a Display Panel
 ### The final result should look like this: ###
 
 ![TransitPredictionsAppExample](img/TransitPredictionsAppExample.png)
+
+A legacy version of this code (last commit cca94f8) used to look like this before changing the example to support more transit lines per LED display:
+
+![TransitPredictionsAppExample_Legacy](img/TransitPredictionsAppExample_Legacy.png)
 
 ## Troubleshooting Steps ##
 It's sometimes the case the board will not go into bootloader mode. Follow the instructions [here](https://learn.adafruit.com/adafruit-matrixportal-s3/factory-reset) to factory reset the unit and try the 'double tap' trick again to flash CircuitPython onto the board
