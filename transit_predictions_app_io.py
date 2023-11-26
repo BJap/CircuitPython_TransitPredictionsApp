@@ -116,7 +116,7 @@ def get_display():
     line3.x = 0
     line3.y = middle + 4
     
-    # Prediction line 1
+    # Prediction line 2
     line4 = label.Label(font)
     line4.color = COLOR_PREDICTION_TEXT
     line4.text = '511.org'
