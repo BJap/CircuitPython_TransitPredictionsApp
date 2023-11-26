@@ -3,12 +3,7 @@ The controller to fetch predictions, display them, and notify when to update aga
 """
 
 from gc import collect
-from json import loads
 from zlib import decompress
-
-
-
-DEFAULT_PREDICTIONS = 2
 
 ERROR_REFRESH_SEC = 30
 MAX_REFRESH_SEC = 60
@@ -27,8 +22,7 @@ class TransitPredictions511:
             agency,
             stop_code,
             route_codes,
-            direction,
-            max_predictions=DEFAULT_PREDICTIONS
+            direction
     ):
         """
         Constructs a predictions object to feed data to the TransitPredictionsApp.
@@ -39,18 +33,16 @@ class TransitPredictions511:
         :param stop_code: the stop for which to gather predictions
         :param route_codes: the routes of interest
         :param direction: the direction of interest
-        :param max_predictions: the maximum predictions to get per route
         """
 
         self.__agency = agency
         self.__display = display
         self.__direction = direction
-        self.__max_predictions = max_predictions
         self.__route_codes = route_codes
         self.__source = source
         self.__stop_code = stop_code
 
-        self.__data_handler = source.get_data_handler('json')
+        self.__data_handler = source.get_data_handler()
 
     @staticmethod
     def __check_for_success(status_code):
@@ -84,19 +76,7 @@ class TransitPredictions511:
                 if route_code in predictions:
                     route = predictions[route_code]
 
-                    line_text = f'{route_code}'
-                    prediction_count = len(route.predictions)
-                    n = min(self.__max_predictions, prediction_count)
-
-                    for i in range(n):
-                        route.predictions[i] = f'{route.predictions[i]}m'
-
-                    if route.predictions[0] == '0m':
-                        route.predictions[0] = 'Now'
-
-                    route_predictions = ' '.join(route.predictions[:n])
-
-                    prediction_text.append(f'{line_text} {route_predictions}')
+                    prediction_text.extend(self.__display.formatter.format(route))
 
         if prediction_text:
             for text in prediction_text:
@@ -147,7 +127,7 @@ class TransitPredictions511:
             # Then this will probably become:
             # data = decompress(response.content, 31).decode('utf-8')
             data = decompress(response.content[10:], -31)[3:].decode('utf-8')
-            self.__data = loads(data) # parse as JSON
+            self.__data = self.__data_handler.parse_data(data)
         else:
             print(f'Status code: {self.__status_code}\n')
             print(f'Reason: {self.__reason}\n')

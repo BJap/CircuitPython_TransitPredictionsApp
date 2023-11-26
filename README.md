@@ -5,7 +5,7 @@ Prediction App That Displays Transit Predictions on a Display Panel
 - **A display** (this example uses the [64x32 RGB LED Matrix - 5mm pitch](https://www.adafruit.com/product/2277))
 - **A controller board** (this example uses the [Adafruit Matrix Portal S3](https://www.adafruit.com/product/5778))
 - **A USB-C data cable**
-- **A USB-C 5V power plug**
+- **A USB-C 5V power plug (and optional power-only USB-C cable if preferred for running)**
 
 ## Instructions ##
 
@@ -21,21 +21,21 @@ Prediction App That Displays Transit Predictions on a Display Panel
 7. Make a `fonts` folder in the root directory of the board and copy the font file into it.
 8. Make a `lib` folder (if it does not exist yet) in the root directory of the boardCopy the following **Adafruit 8.x CircuitPython** libraries into it:
     - `adafruit_bitmap_font` (copy the folder)
-    - `adafruit_display_shapes` (copy the folder) (legacy)
+    - `adafruit_display_shapes` (copy the folder)
     - `adafruit_display_text` (copy the folder)
     - `adafruit_matrixportal` (copy the folder)
     - `adafruit_datetime.mpy` (copy the file)
     - `adafruit_requests.mpy` (copy the file)
 9. Copy all the python files from this repo as well as the toml file onto the board's root directory and approval overwrite when asked
-10. Safely eject the board from the computer and move the cable from the computer to the USB-C power plug
+10. Safely eject the board from the computer and move the cable from the computer to the USB-C power plug (or use the power USB-C cable instead)
 
 ### The final result should look like this: ###
 
 ![TransitPredictionsAppExample](img/TransitPredictionsAppExample.png)
 
-A legacy version of this code (last commit cca94f8) used to look like this before changing the example to support more transit lines per LED display:
+The example could also be changed to support more transit lines per LED display to look like this:
 
-![TransitPredictionsAppExample_Legacy](img/TransitPredictionsAppExample_Legacy.png)
+![TransitPredictionsAppExample_Expanded](img/TransitPredictionsAppExample_Expanded.png)
 
 ## Troubleshooting Steps ##
 It's sometimes the case the board will not go into bootloader mode. Follow the instructions [here](https://learn.adafruit.com/adafruit-matrixportal-s3/factory-reset) to factory reset the unit and try the 'double tap' trick again to flash CircuitPython onto the board

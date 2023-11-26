@@ -11,6 +11,8 @@ In order to obtain an access token to use for this API go to:
 https://511.org/open-data/token
 """
 
+from json import loads
+
 # libs
 from adafruit_datetime import datetime
 
@@ -21,6 +23,16 @@ class JsonHandler:
     """
     Parses the data returned in JSON format from the 511.org API.
     """
+
+    @staticmethod
+    def parse_data(data):
+        """
+        Takes the cleartext response data from an API call and formats it to a JSON map
+
+        :return: the data in JSON format
+        """
+
+        return loads(data)
 
     @staticmethod
     def predictions_for_route_codes(json, route_codes, direction):
@@ -149,12 +161,13 @@ class TransitApi:
     All the 511.org API calls are made from this class.
     """
 
-    def __init__(self, requests, api_key, r_format='json'):
+    def __init__(self, requests, api_key, r_format):
         """
         Constructs a 'TransitApi' object with which to communicate with 511.org.
 
         :param requests: the requests object with which to contact the API
         :param api_key: the unique key given to the end user
+        :param r_format: the format (such as 'json' or 'xml') to return
         """
 
         self.__api_key = api_key
@@ -172,16 +185,14 @@ class TransitApi:
 
         return f'https://{BASE_URL}/transit{command}?api_key={self.__api_key}&{parameters}&format={self.__r_format}'
 
-    @staticmethod
-    def get_data_handler(r_format):
+    def get_data_handler(self):
         """
         Gets the handler to parse the data returned from the API in the chosen format.
 
-        :param r_format: the format of the data that will be fetched and parsed.
         :return: the data handler
         """
 
-        if r_format == 'json':
+        if self.__r_format == 'json':
             return JsonHandler()
         else:
             return None

@@ -9,6 +9,15 @@ class Console:
     or writing a new predictions object without using the sign.
     """
 
+    def __init__(self, formatter):
+        """
+        Constructs a 'Console' object to print text.
+
+        :param formatter: the formatter used to prepare the text to display
+        """
+
+        self.formatter = formatter
+
     def show(self, text):
         """
         Shows the provided text.
@@ -25,25 +34,19 @@ class Sign:
     Prints text to an RGBMatrix
     """
 
-    def __init__(self, display, lines):
+    def __init__(self, display, formatter, lines):
         """
         Constructs a 'Sign' object to display text.
 
         :param display: the display matrix on which to show text
+        :param formatter: the formatter used to prepare the text to display
         :param lines: the lines provided in the display
         """
 
-        self.__display = display
         self.__lines = lines
 
-    def get_display(self):
-        """
-        Gets the display object used to display lines for additional
-        configuration by a controller if needed.
-
-        :return: the display
-        """
-        return self.__display
+        self.display = display
+        self.formatter = formatter
 
     def show(self, text):
         """
