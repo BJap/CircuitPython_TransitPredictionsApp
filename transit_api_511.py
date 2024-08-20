@@ -35,13 +35,13 @@ class JsonHandler:
         return loads(data)
 
     @staticmethod
-    def predictions_for_route_codes(json, route_codes, direction):
+    def predictions_for_route_codes(json, route_codes, directions):
         """
         Takes all the prediction JSON and collects only the relevant items.
 
         :param json: the data to parse
         :param route_codes: the routes of interest
-        :param direction: the direction of interest
+        :param directions: the directions of interest
         :return: the predictions that are available if any
         """
 
@@ -64,8 +64,8 @@ class JsonHandler:
             trip = visit['MonitoredVehicleJourney']
             route_code = trip['LineRef']
 
-            # If the route code is of interest in the trip in the correct direction
-            if route_code in route_codes and trip['DirectionRef'] == direction:
+            # If the route code is of interest in the trip in the correct direction(s)
+            if route_code in route_codes and trip['DirectionRef'] in directions:
                 # If predictions doesn't have the route in it yet, add it
                 if route_code not in predictions:
                     title = trip['PublishedLineName']
@@ -89,13 +89,13 @@ class JsonHandler:
         return predictions
 
     @staticmethod
-    def prediction_seconds_soonest(json, route_codes, direction):
+    def prediction_seconds_soonest(json, route_codes, directions):
         """
         Determines when the next transit will arrive.
 
         :param json: the data to parse
         :param route_codes: the routes of interest
-        :param direction: the direction of interest
+        :param directions: the directions of interest
         :return: the next arrival time or 0 if there are no predictions
         """
 
@@ -113,8 +113,8 @@ class JsonHandler:
             trip = visit['MonitoredVehicleJourney']
             route_code = trip['LineRef']
 
-            # If the route code is of interest in the trip in the correct direction
-            if route_code in route_codes and trip['DirectionRef'] == direction:
+            # If the route code is of interest and the trip in the correct direction(s)
+            if route_code in route_codes and trip['DirectionRef'] in directions:
                 # The predicted time of the visit
                 prediction_info = trip['MonitoredCall']
                 arrival_time = prediction_info['ExpectedArrivalTime']

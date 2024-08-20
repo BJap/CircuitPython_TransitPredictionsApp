@@ -43,7 +43,7 @@ Transit examples do not run 24/7 so if no results are displayed this might be ru
 
 ## Next Steps ##
 
-- The values in the `settings.toml` file can be changed based on the stop and routes that are of interest now that the board and sign are up and running
+- The values in the `settings.toml` file can be changed based on the stop, direction(s) (OB and/or IB), and routes that are of interest now that the board and sign are up and running using comma-delimited separation where appropriate
 - Other displays can be used and appearances can be customized in the `transit_predictions_app_io.py` file for the display
 - Other APIs or regions can be used in the `transit_predictions_app_io.py` for sources
 

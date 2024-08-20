@@ -22,7 +22,7 @@ class TransitPredictions511:
             agency,
             stop_code,
             route_codes,
-            direction
+            directions
     ):
         """
         Constructs a predictions object to feed data to the TransitPredictionsApp.
@@ -32,12 +32,12 @@ class TransitPredictions511:
         :param agency: the agency that has the predictions
         :param stop_code: the stop for which to gather predictions
         :param route_codes: the routes of interest
-        :param direction: the direction of interest
+        :param directions: the directions of interest
         """
 
         self.__agency = agency
         self.__display = display
-        self.__direction = direction
+        self.__directions = set(directions.split(','))
         self.__route_codes = route_codes
         self.__source = source
         self.__stop_code = stop_code
@@ -67,7 +67,7 @@ class TransitPredictions511:
         predictions = self.__data_handler.predictions_for_route_codes(
             self.__data,
             self.__route_codes,
-            self.__direction
+            self.__directions
         )
         prediction_text = []
 
@@ -98,7 +98,7 @@ class TransitPredictions511:
         seconds_soonest = self.__data_handler.prediction_seconds_soonest(
             self.__data,
             self.__route_codes,
-            self.__direction
+            self.__directions
         )
 
         if not seconds_soonest:
