@@ -168,5 +168,5 @@ def get_controller(display, source):
         getenv('511_TRANSIT_AGENCY'),  # agency
         getenv('511_TRANSIT_STOP_CODE'),  # stop_code
         getenv('511_TRANSIT_ROUTE_CODES').split(','),  # route_codes
-        getenv('511_TRANSIT_DIRECTION')  # direction
+        getenv('511_TRANSIT_DIRECTIONS')  # directions
     )
