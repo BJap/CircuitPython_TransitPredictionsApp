@@ -58,10 +58,10 @@ class Sign:
         # Wipe the existing text from the lines
         for line in self.__lines:
             line.text = ''
-            
+
         n = min(len(self.__lines), len(text))
         i = 0
-        
+
         # Set the new texts to each line
         while i < n:
             self.__lines[i].text = text[i]

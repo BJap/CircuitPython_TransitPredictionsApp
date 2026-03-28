@@ -13,7 +13,7 @@ https://511.org/open-data/token
 
 from json import loads
 
-# libs
+# lib
 from adafruit_datetime import datetime
 
 BASE_URL = 'api.511.org'
@@ -170,11 +170,11 @@ class TransitApi:
         :param r_format: the format (such as 'json' or 'xml') to return
         """
 
-        self.__api_key = api_key
-        self.__r_format = r_format
-        self.__requests = requests
+        self._api_key = api_key
+        self._r_format = r_format
+        self._requests = requests
 
-    def __get_command_url(self, command, parameters):
+    def _get_command_url(self, command, parameters):
         """
         Generates the url with which to make the request.
 
@@ -183,7 +183,7 @@ class TransitApi:
         :return: the completed url
         """
 
-        return f'https://{BASE_URL}/transit{command}?api_key={self.__api_key}&{parameters}&format={self.__r_format}'
+        return f'https://{BASE_URL}/transit{command}?api_key={self._api_key}&{parameters}&format={self._r_format}'
 
     def get_data_handler(self):
         """
@@ -192,7 +192,7 @@ class TransitApi:
         :return: the data handler
         """
 
-        if self.__r_format == 'json':
+        if self._r_format == 'json':
             return JsonHandler()
         else:
             return None
@@ -208,6 +208,6 @@ class TransitApi:
 
         command = '/StopMonitoring'
         parameters = f'agency={agency}&stopCode={stop_code}'
-        endpoint = self.__get_command_url(command, parameters)
+        endpoint = self._get_command_url(command, parameters)
 
-        return self.__requests.get(endpoint)
+        return self._requests.get(endpoint)

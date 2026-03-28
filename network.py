@@ -10,6 +10,9 @@ import wifi
 # lib
 import adafruit_requests as requests
 
+# local
+from config import DEBUG_MODE
+
 
 class Wifi:
     """
@@ -25,11 +28,13 @@ class Wifi:
         :param password: the network's password
         """
 
-        print(f'Connecting to WiFi using SSID: {ssid}')
+        if DEBUG_MODE:
+            print(f'Connecting to WiFi using SSID: {ssid}')
 
         wifi.radio.connect(ssid, password)
 
-        print(f'Connected to WiFi at IP address: {wifi.radio.ipv4_address}\n')
+        if DEBUG_MODE:
+            print(f'Connected to WiFi at IP address: {wifi.radio.ipv4_address}\n')
 
     @staticmethod
     def get_session():
