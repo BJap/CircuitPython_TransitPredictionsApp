@@ -7,6 +7,7 @@ from zlib import decompress
 
 # local
 from config import DEBUG_MODE
+from display import Display
 
 ERROR_REFRESH_SEC = 30
 MAX_REFRESH_SEC = 60
@@ -20,8 +21,9 @@ class TransitPredictions511:
 
     def __init__(
             self,
-            display,
+            display: Display,
             source,
+            formatter,
             agency,
             stop_code,
             route_codes,
@@ -32,6 +34,7 @@ class TransitPredictions511:
 
         :param display: the object that shows the transit predictions
         :param source: the object that fetches and models transit predictions
+        :param formatter: the formatter used to prepare the text to display
         :param agency: the agency that has the predictions
         :param stop_code: the stop for which to gather predictions
         :param route_codes: the routes of interest
@@ -41,6 +44,7 @@ class TransitPredictions511:
         self._agency = agency
         self._display = display
         self._directions = set(directions.split(','))
+        self._formatter = formatter
         self._route_codes = route_codes
         self._source = source
         self._stop_code = stop_code
@@ -48,7 +52,7 @@ class TransitPredictions511:
         self._data_handler = source.get_data_handler()
 
     @staticmethod
-    def _check_for_success(status_code):
+    def _check_for_success(status_code) -> bool:
         """
         Checks the response for a success.
 
@@ -58,7 +62,7 @@ class TransitPredictions511:
 
         return 200 <= status_code < 300
 
-    def _get_predictions(self):
+    def _get_predictions(self) -> list[str]:
         """
         Gets the predictions for the PredictionsApp.
 
@@ -79,7 +83,7 @@ class TransitPredictions511:
                 if route_code in predictions:
                     route = predictions[route_code]
 
-                    prediction_text.extend(self._display.formatter.format(route))
+                    prediction_text.extend(self._formatter.format(route))
 
         if DEBUG_MODE:
             if prediction_text:
@@ -142,9 +146,9 @@ class TransitPredictions511:
         collect()
 
     def update(self):
-        '''
-        Updates predictions and the display with thse new predictions.
-        '''
+        """
+        Updates predictions and the display with these new predictions.
+        """
 
         if DEBUG_MODE:
             print(f'Getting predictions for agency {self._agency} for stop_code {self._stop_code}')

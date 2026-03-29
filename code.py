@@ -1,5 +1,5 @@
 """
-This class is used to run apps on a sbc controller.
+This file is used to run apps on a sbc controller.
 
 Suggested safety for when there is an issue with the network
 https://learn.adafruit.com/pico-w-wifi-with-circuitpython

@@ -8,7 +8,7 @@ import ssl
 import wifi
 
 # lib
-import adafruit_requests as requests
+from adafruit_requests import Session
 
 # local
 from config import DEBUG_MODE
@@ -37,7 +37,7 @@ class Wifi:
             print(f'Connected to WiFi at IP address: {wifi.radio.ipv4_address}\n')
 
     @staticmethod
-    def get_session():
+    def get_session() -> Session:
         """
         Gets and object with which to make requests.
 
@@ -46,4 +46,4 @@ class Wifi:
 
         pool = SocketPool(wifi.radio)
 
-        return requests.Session(pool, ssl.create_default_context())
+        return Session(pool, ssl.create_default_context())

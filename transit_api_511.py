@@ -161,17 +161,17 @@ class TransitApi:
     All the 511.org API calls are made from this class.
     """
 
-    def __init__(self, requests, api_key, r_format):
+    def __init__(self, requests, api_key, format_):
         """
         Constructs a 'TransitApi' object with which to communicate with 511.org.
 
         :param requests: the requests object with which to contact the API
         :param api_key: the unique key given to the end user
-        :param r_format: the format (such as 'json' or 'xml') to return
+        :param format_: the format (such as 'json' or 'xml') to return
         """
 
         self._api_key = api_key
-        self._r_format = r_format
+        self._format = format_
         self._requests = requests
 
     def _get_command_url(self, command, parameters):
@@ -183,7 +183,7 @@ class TransitApi:
         :return: the completed url
         """
 
-        return f'https://{BASE_URL}/transit{command}?api_key={self._api_key}&{parameters}&format={self._r_format}'
+        return f'https://{BASE_URL}/transit{command}?api_key={self._api_key}&{parameters}&format={self._format}'
 
     def get_data_handler(self):
         """
@@ -192,7 +192,7 @@ class TransitApi:
         :return: the data handler
         """
 
-        if self._r_format == 'json':
+        if self._format == 'json':
             return JsonHandler()
         else:
             return None

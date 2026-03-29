@@ -2,23 +2,31 @@
 Display types that can be used to present prediction data
 """
 
+# lib
+from adafruit_matrixportal.matrix import Matrix
 
-class Console:
+
+class Display:
     """
-    Used to display to the REPL console. This is good for debugging changes
-    or writing a new predictions object without using the sign.
+    Used to display text to a given output.
     """
 
-    def __init__(self, formatter):
+    def show(self, text: list[str]):
         """
-        Constructs a 'Console' object to print text.
+        Shows the provided text.
 
-        :param formatter: the formatter used to prepare the text to display
+        :param text: an array of text to display
         """
 
-        self.formatter = formatter
+        raise NotImplementedError("Subclasses of Display must implement show() method")
 
-    def show(self, text):
+class Console(Display):
+    """
+    Used to print to the REPL console. This is good for debugging changes
+    or writing a new predictions object without using any hardware.
+    """
+
+    def show(self, text: list[str]):
         """
         Shows the provided text.
 
@@ -29,26 +37,24 @@ class Console:
             print(line)
 
 
-class Sign:
+class Sign(Display):
     """
     Prints text to an RGBMatrix
     """
 
-    def __init__(self, display, formatter, lines):
+    def __init__(self, matrix: Matrix, lines):
         """
         Constructs a 'Sign' object to display text.
 
-        :param display: the display matrix on which to show text
-        :param formatter: the formatter used to prepare the text to display
+        :param matrix: the display matrix on which to show text
         :param lines: the lines provided in the display
         """
 
         self.__lines = lines
 
-        self.display = display
-        self.formatter = formatter
+        self.matrix = matrix
 
-    def show(self, text):
+    def show(self, text: list[str]):
         """
         Shows the provided text.
 
