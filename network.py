@@ -20,7 +20,7 @@ class Wifi:
     """
 
     @staticmethod
-    def connect(ssid, password):
+    def connect(ssid: str, password: str):
         """
         Connects to Wi-Fi using the provided credentials.
 
