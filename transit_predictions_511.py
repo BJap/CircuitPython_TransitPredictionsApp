@@ -5,6 +5,10 @@ The controller to fetch predictions, display them, and notify when to update aga
 from gc import collect
 from zlib import decompress
 
+# local
+from config import DEBUG_MODE
+from display import Display
+
 ERROR_REFRESH_SEC = 30
 MAX_REFRESH_SEC = 60
 MIN_REFRESH_SEC = 10
@@ -17,8 +21,9 @@ class TransitPredictions511:
 
     def __init__(
             self,
-            display,
+            display: Display,
             source,
+            formatter,
             agency,
             stop_code,
             route_codes,
@@ -29,23 +34,25 @@ class TransitPredictions511:
 
         :param display: the object that shows the transit predictions
         :param source: the object that fetches and models transit predictions
+        :param formatter: the formatter used to prepare the text to display
         :param agency: the agency that has the predictions
         :param stop_code: the stop for which to gather predictions
         :param route_codes: the routes of interest
         :param directions: the directions of interest
         """
 
-        self.__agency = agency
-        self.__display = display
-        self.__directions = set(directions.split(','))
-        self.__route_codes = route_codes
-        self.__source = source
-        self.__stop_code = stop_code
+        self._agency = agency
+        self._display = display
+        self._directions = set(directions.split(','))
+        self._formatter = formatter
+        self._route_codes = route_codes
+        self._source = source
+        self._stop_code = stop_code
 
-        self.__data_handler = source.get_data_handler()
+        self._data_handler = source.get_data_handler()
 
     @staticmethod
-    def __check_for_success(status_code):
+    def _check_for_success(status_code) -> bool:
         """
         Checks the response for a success.
 
@@ -55,7 +62,7 @@ class TransitPredictions511:
 
         return 200 <= status_code < 300
 
-    def __get_predictions(self):
+    def _get_predictions(self) -> list[str]:
         """
         Gets the predictions for the PredictionsApp.
 
@@ -64,73 +71,72 @@ class TransitPredictions511:
             - <prediction 1> <prediction 2> ...
         """
 
-        predictions = self.__data_handler.predictions_for_route_codes(
-            self.__data,
-            self.__route_codes,
-            self.__directions
+        predictions = self._data_handler.predictions_for_route_codes(
+            self._data,
+            self._route_codes,
+            self._directions
         )
         prediction_text = []
 
         if predictions:
-            for route_code in self.__route_codes:
+            for route_code in self._route_codes:
                 if route_code in predictions:
                     route = predictions[route_code]
 
-                    prediction_text.extend(self.__display.formatter.format(route))
+                    prediction_text.extend(self._formatter.format(route))
 
-        if prediction_text:
-            for text in prediction_text:
-                print(text)
+        if DEBUG_MODE:
+            if prediction_text:
+                for text in prediction_text:
+                    print(text)
 
-            print('')
-        else:
-            print('No predictions available\n')
+                print('')
+            else:
+                print('No predictions available\n')
 
         return prediction_text
 
-    def __get_refresh_interval(self):
+    def _get_refresh_interval(self):
         """
-        Get when the next refresh of prediction data should occur.
+        Gets when the next refresh of prediction data should occur.
 
         :return: the minimum time, the time until the next transit arrives, or the maximum time (in seconds)
         """
 
-        seconds_soonest = self.__data_handler.prediction_seconds_soonest(
-            self.__data,
-            self.__route_codes,
-            self.__directions
+        seconds_soonest = self._data_handler.prediction_seconds_soonest(
+            self._data,
+            self._route_codes,
+            self._directions
         )
 
         if not seconds_soonest:
-            print('There are no desired transit options arriving soon\n')
+            if DEBUG_MODE:
+                print('There are no desired transit options arriving soon\n')
 
             return MAX_REFRESH_SEC
 
-        print(f'The next desired transit option arrives in {seconds_soonest} seconds\n')
+        if DEBUG_MODE:
+            print(f'The next desired transit option arrives in {seconds_soonest} seconds\n')
 
         return max(min(seconds_soonest, MAX_REFRESH_SEC), MIN_REFRESH_SEC)
 
-    def __poll(self):
+    def _poll(self):
         """
         Polls for prediction data and stores it at class level.
         """
 
         # Wipe the existing data and fetch new data
-        self.__data = None
-        response = self.__source.predictions_for_stop_code(self.__agency, self.__stop_code)
-        self.__status_code = response.status_code
-        self.__reason = response.reason.decode('utf-8')
+        self._data = None
+        response = self._source.predictions_for_stop_code(self._agency, self._stop_code)
+        self._status_code = response.status_code
+        self._reason = response.reason.decode('utf-8')
 
-        if self.__check_for_success(self.__status_code):
-            # There's a bug for this that was fixed in
-            # https://github.com/adafruit/circuitpython/pull/8335
-            # Then this will probably become:
-            # data = decompress(response.content, 31).decode('utf-8')
-            data = decompress(response.content[10:], -31)[3:].decode('utf-8')
-            self.__data = self.__data_handler.parse_data(data)
-        else:
-            print(f'Status code: {self.__status_code}\n')
-            print(f'Reason: {self.__reason}\n')
+        if self._check_for_success(self._status_code):
+            data = decompress(response.content, 31)[3:].decode('utf-8')
+            self._data = self._data_handler.parse_data(data)
+        elif DEBUG_MODE:
+            print(f'Status code: {self._status_code}\n')
+            print(f'Reason: {self._reason}\n')
 
         response.close()
 
@@ -140,16 +146,21 @@ class TransitPredictions511:
         collect()
 
     def update(self):
-        print(f'Getting predictions for agency {self.__agency} for stop_code {self.__stop_code}')
+        """
+        Updates predictions and the display with these new predictions.
+        """
 
-        self.__poll()
+        if DEBUG_MODE:
+            print(f'Getting predictions for agency {self._agency} for stop_code {self._stop_code}')
+
+        self._poll()
 
         # Polling failed
-        if not self.__data:
-            self.__display.show(['Network Error', f'{self.__status_code}', f'{self.__reason}'])
+        if not self._data:
+            self._display.show(['Network Error', f'{self._status_code}', f'{self._reason}'])
 
             return ERROR_REFRESH_SEC
 
-        self.__display.show(self.__get_predictions())
+        self._display.show(self._get_predictions())
 
-        return self.__get_refresh_interval()
+        return self._get_refresh_interval()

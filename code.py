@@ -1,5 +1,5 @@
 """
-This class is used to run apps on a sbc controller.
+This file is used to run apps on a sbc controller.
 
 Suggested safety for when there is an issue with the network
 https://learn.adafruit.com/pico-w-wifi-with-circuitpython
@@ -10,6 +10,7 @@ from os import getenv
 from time import sleep
 
 # local
+from config import DEBUG_MODE
 from network import Wifi
 from transit_predictions_app import TransitPredictionsApp
 
@@ -31,8 +32,9 @@ try:
     app = TransitPredictionsApp(requests)
     app.run()
 except Exception as e:
-    print(f'Error:\n {str(e)}')
-    print(f'Resetting microcontroller in {RESET_DELAY_SEC} seconds')
+    if DEBUG_MODE:
+        print(f'Error:\n {str(e)}')
+        print(f'Resetting microcontroller in {RESET_DELAY_SEC} seconds')
     # Comment out these if doing active development in case of failure to the program ends
     sleep(RESET_DELAY_SEC)
     reset()

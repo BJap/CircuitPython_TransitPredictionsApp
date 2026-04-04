@@ -21,24 +21,26 @@ https://opensource.apple.com/source/X11fonts/X11fonts-14/font-misc-misc/font-mis
 from displayio import Group
 from os import getenv
 
-# libs
+# lib
 from adafruit_bitmap_font import bitmap_font
-from adafruit_display_text import label
 from adafruit_display_shapes.line import Line
+from adafruit_display_text import label
 from adafruit_matrixportal.matrix import Matrix
 
 # local
-from display import Sign
+from config import DEBUG_MODE
+from display import Console, Display, Sign
 from transit_api_511 import TransitApi
 from transit_predictions_511 import TransitPredictions511
 
 # DISPLAY
-PANEL_WIDTH = 64
-PANEL_HEIGHT = 32
 
 COLOR_SEPARATOR = 0x00071F
 COLOR_LINE_TEXT = 0x4F1400
 COLOR_PREDICTION_TEXT = 0x001800
+
+PANEL_WIDTH = 64
+PANEL_HEIGHT = 32
 
 MAX_PREDICTIONS = 3
 
@@ -47,6 +49,7 @@ TEXT_FONT_WIDTH = 5
 TEXT_FONT_HEIGHT = 7
 
 # SOURCE
+
 RESPONSE_FORMAT = 'json'
 
 
@@ -79,43 +82,46 @@ class PredictionFormatter:
         return [line_text, route_predictions]
 
 
-def get_display():
+def get_display() -> Display:
     """
-    Gets the display that will show the predictions. The source needs to
+    Gets the display that will show the predictions. The display needs to
     have one method:
-        show(text: [str])
+        show(text: list[str])
 
     :return: the display object
     """
 
+    if DEBUG_MODE:
+        return Console()
+
     font = bitmap_font.load_font(TEXT_FONT)
-    
+
     # Transit line 1
     line1 = label.Label(font)
     line1.color = COLOR_LINE_TEXT
     line1.text = 'Predictions'
     line1.x = 0
     line1.y = 3
-    
+
     # Prediction line 1
     line2 = label.Label(font)
     line2.color = COLOR_PREDICTION_TEXT
     line2.text = 'for SF MUNI'
     line2.x = 0
     line2.y = line1.y + TEXT_FONT_HEIGHT + 1
-    
+
     middle = int(PANEL_HEIGHT / 2)
 
     # Separator line
     separator = Line(0, middle - 1, PANEL_WIDTH, middle - 1, COLOR_SEPARATOR)
-    
+
     # Transit line 2
     line3 = label.Label(font)
     line3.color = COLOR_LINE_TEXT
     line3.text = 'using API'
     line3.x = 0
     line3.y = middle + 4
-    
+
     # Prediction line 2
     line4 = label.Label(font)
     line4.color = COLOR_PREDICTION_TEXT
@@ -131,13 +137,13 @@ def get_display():
     g.append(line4)
 
     # Matrix Portal S3 (ESP32-S3)
-    display = Matrix(bit_depth=6).display
-    display.refresh(minimum_frames_per_second=0)
+    matrix = Matrix(bit_depth=6).display
+    matrix.refresh(minimum_frames_per_second=0)
     # change this to 180 to plug power in from the left rather than the right
-    display.rotation = 0
-    display.show(g)
+    matrix.rotation = 0
+    matrix.root_group = g
 
-    return Sign(display, PredictionFormatter(), [line1, line2, line3, line4])
+    return Sign(matrix, [line1, line2, line3, line4])
 
 
 def get_source(requests):
@@ -151,11 +157,11 @@ def get_source(requests):
     return TransitApi(requests, getenv('511_API_KEY'), RESPONSE_FORMAT)
 
 
-def get_controller(display, source):
+def get_controller(display: Display, source):
     """
-        Gets the controller used to fetch and display predictions. The source needs
-        to have one method to update the info and return when to update next (in seconds):
-            update(): int
+    Gets the controller used to fetch and display predictions. The controller needs
+    to have one method to update the info and return when to update next (in seconds):
+        update(): int
 
     :param display: the display for the predictions
     :param source: the source for the prediction data
@@ -165,6 +171,7 @@ def get_controller(display, source):
     return TransitPredictions511(
         display,
         source,
+        PredictionFormatter(),
         getenv('511_TRANSIT_AGENCY'),  # agency
         getenv('511_TRANSIT_STOP_CODE'),  # stop_code
         getenv('511_TRANSIT_ROUTE_CODES').split(','),  # route_codes
