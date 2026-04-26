@@ -47,7 +47,7 @@ The example could also be changed to support more transit lines per LED display 
 ## Troubleshooting Steps
 
 - It's sometimes the case the board will not go into bootloader mode. Follow the instructions [here](https://learn.adafruit.com/adafruit-matrixportal-s3/factory-reset) to factory reset the unit and try the 'double tap' trick again to flash CircuitPython onto the board.
-- Transit examples do not run 24/7 so if no results are displayed this might be run too late at night and it's best to come back to it the next day
+- Transit examples do not run 24/7 so if no results are displayed this might be run too late at night, and it's best to come back to it the next day
 - The `config.py` file has a `DEBUG_MODE` to enable logging and the console output instead of the sign itself when set to `True`.
 
 ## Next Steps

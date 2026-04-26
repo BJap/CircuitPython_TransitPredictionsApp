@@ -11,11 +11,13 @@ from time import sleep
 
 # local
 from config import DEBUG_MODE
+from app511.predictions_app_511 import TransitPredictionsApp511
+from display.configuration_console import ConfigurationConsole
+from display.configuration_matrix_64_x_32_fancy import ConfigurationMatrix64X32Fancy
 from network import Wifi
-from transit_predictions_app import TransitPredictionsApp
 
 RESET_DELAY_SEC = 30
-RUN_DELAY_SEC = 5
+RUN_DELAY_SEC = 0
 
 try:
     # Sometimes while coding things can hang up so good to leave a gap of time to wait
@@ -29,12 +31,24 @@ try:
 
     requests = Wifi.get_session()
 
-    app = TransitPredictionsApp(requests)
-    app.run()
+    if DEBUG_MODE:
+        display_config = ConfigurationConsole()
+    else:
+        display_config = ConfigurationMatrix64X32Fancy()
+
+    app = TransitPredictionsApp511(requests, display_config)
+
+    while True:
+        wait = app.update()
+
+        if DEBUG_MODE:
+            print(f'Refreshing predictions in {wait} seconds\n')
+
+        sleep(wait)
 except Exception as e:
     if DEBUG_MODE:
         print(f'Error:\n {str(e)}')
         print(f'Resetting microcontroller in {RESET_DELAY_SEC} seconds')
-    # Comment out these if doing active development in case of failure to the program ends
+    # Comment out these if doing active development in case of failure to the program ends.
     sleep(RESET_DELAY_SEC)
     reset()
