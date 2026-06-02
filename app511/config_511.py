@@ -14,6 +14,8 @@ class TransitConfig511:
         """
         Construct a new 'TransitConfig511' object using the provided configuration.
 
+        :param api_key: the key with which to fetch predictions
+        :param rate: the rate (in seconds) of interval for which to fetch predictions
         :param agency: the transit agency
         :param directions: the directions (could be one direction, the other, or both)
         :param route_codes: the routes of interest
