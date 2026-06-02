@@ -10,7 +10,7 @@ class TransitConfig511:
     Holds the configuration for fetching predictions.
     """
 
-    def __init__(self, api_key: str, agency: str, directions: str, route_codes: str, stop_code: str):
+    def __init__(self, api_key: str, rate: str, agency: str, directions: str, route_codes: str, stop_code: str):
         """
         Construct a new 'TransitConfig511' object using the provided configuration.
 
@@ -24,6 +24,7 @@ class TransitConfig511:
         self.api_key = api_key
         self.directions =  directions.split(',')
         self.route_codes = route_codes.split(',')
+        self.rate = int(rate)
         self.stop_code = stop_code
 
     @staticmethod
@@ -36,8 +37,9 @@ class TransitConfig511:
 
         return TransitConfig511(
             getenv('511_API_KEY'),
-            getenv('511_TRANSIT_AGENCY'),  # agency
-            getenv('511_TRANSIT_DIRECTIONS'),  # directions
+            getenv('511_API_LIMIT', '60'),      # rate limit (default every 60 seconds as per documentation minimum)
+            getenv('511_TRANSIT_AGENCY'),       # agency
+            getenv('511_TRANSIT_DIRECTIONS'),   # directions
             getenv('511_TRANSIT_ROUTE_CODES'),  # route_codes
-            getenv('511_TRANSIT_STOP_CODE')  # stop_code
+            getenv('511_TRANSIT_STOP_CODE')     # stop_code
         )

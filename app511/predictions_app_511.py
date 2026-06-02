@@ -23,7 +23,7 @@ RESPONSE_FORMAT = 'json'
 
 ERROR_REFRESH_SEC = 30
 MAX_REFRESH_SEC = 60
-MIN_REFRESH_SEC = 10
+MIN_REFRESH_SEC = 20
 
 
 class TransitPredictionsApp511(TransitPredictionsApp):
@@ -162,4 +162,7 @@ class TransitPredictionsApp511(TransitPredictionsApp):
 
         self._display.show(self._get_predictions())
 
-        return self._get_refresh_interval()
+        if DEBUG_MODE:
+            return self._get_refresh_interval()
+        else:
+            return self._api_config.rate
