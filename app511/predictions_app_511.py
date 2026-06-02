@@ -84,12 +84,7 @@ class TransitPredictionsApp511(TransitPredictionsApp):
                     prediction_text.extend(route_text)
 
         if DEBUG_MODE:
-            if prediction_text:
-                for text in prediction_text:
-                    print(text)
-
-                print('')
-            else:
+            if not prediction_text:
                 print('No predictions available\n')
 
         return prediction_text
@@ -131,6 +126,9 @@ class TransitPredictionsApp511(TransitPredictionsApp):
         if TransitAPI511.check_for_success(self._status_code):
             data = decompress(response.content, 31)[3:].decode('utf-8')
             self._data = self._source.get_data_handler().parse_data(data)
+            
+            # Free up all this memory or the next poll's allocation will fail on some devices.
+            del data
         elif DEBUG_MODE:
             print(f'Status code: {self._status_code}\n')
             print(f'Reason: {self._reason}\n')
@@ -139,7 +137,6 @@ class TransitPredictionsApp511(TransitPredictionsApp):
 
         # Free up all this memory or the next poll's allocation will fail on some devices.
         del response
-        del data
         collect()
 
     def update(self) -> int:
