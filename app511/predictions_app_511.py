@@ -13,6 +13,7 @@ from app511.api_511 import TransitAPI511
 from app511.config_511 import TransitConfig511
 from config import DEBUG_MODE
 from display.display import DisplayConfigration
+from network import Wifi
 from transit.predictions_app import TransitPredictionsApp
 
 # SOURCE
@@ -78,6 +79,8 @@ class TransitPredictionsApp511(TransitPredictionsApp):
             for route_code in self._api_config.route_codes:
                 if route_code in predictions:
                     route = predictions[route_code]
+                    route.predictions.sort()
+
                     route_text = self._formatter.format(
                         route,
                         self._display_config.maximum_predictions,
@@ -120,31 +123,59 @@ class TransitPredictionsApp511(TransitPredictionsApp):
         Polls for prediction data and stores it at class level.
         """
 
-        # Wipe the existing data and fetch new data.
+        # Reset the existing data.
+        data = None
+        response = None
         self._data = None
-        response = self._source.get_predictions((self._api_config.agency, self._api_config.stop_code))
-        self._status_code = response.status_code
-        self._reason = response.reason.decode('utf-8')
+        self._status_code = "Connection Failed"
+        self._reason = "Timeout/No Response"
 
-        if TransitAPI511.check_for_success(self._status_code):
-            data = decompress(response.content, 31)[3:].decode('utf-8')
-            self._data = self._source.get_data_handler().parse_data(data)
-            self._consecutive_failures = 0
+        # Fetch new data
+        try:
+            Wifi.ensure_connected()
 
-            # Free up all this memory or the next poll's allocation will fail on some devices.
-            del data
-        else:
+            response = self._source.get_predictions((self._api_config.agency, self._api_config.stop_code))
+            self._status_code = response.status_code
+
+            if isinstance(response.reason, bytes):
+                self._reason = response.reason.decode('utf-8')
+            else:
+                self._reason = response.reason
+
+            if TransitAPI511.check_for_success(self._status_code):
+                data = decompress(response.content, 31)[3:].decode('utf-8')
+                self._data = self._source.get_data_handler().parse_data(data)
+                self._consecutive_failures = 0
+            else:
+                self._consecutive_failures += 1
+
+                if DEBUG_MODE:
+                    print(f'Status code: {self._status_code}\n')
+                    print(f'Reason: {self._reason}\n')
+
+        except Exception as e:
+            # Catch raw socket/network drop exceptions before an HTTP response is ever made.
             self._consecutive_failures += 1
+            self._status_code = "Network Error"
+            self._reason = str(e)
 
             if DEBUG_MODE:
-                print(f'Status code: {self._status_code}\n')
-                print(f'Reason: {self._reason}\n')
+                print(f'Socket exception caught during fetch: {e}\n')
 
-        response.close()
+        finally:
+            # Free up all this memory or the next poll's allocation will fail on some devices.
+            if response is not None:
+                try:
+                    response.close()
+                except Exception:
+                    pass
 
-        # Free up all this memory or the next poll's allocation will fail on some devices.
-        del response
-        collect()
+                del response
+
+            if data is not None:
+                del data
+
+            collect()
 
     def update(self) -> int:
         """
@@ -163,7 +194,7 @@ class TransitPredictionsApp511(TransitPredictionsApp):
             self._display.show(['Network Error', f'{self._status_code}', f'{self._reason}'])
 
             backoff_sec = (2 ** (self._consecutive_failures - 1)) * ERROR_REFRESH_SEC
-            actual_wait = min(MAX_BACKOFF, max_backoff)
+            actual_wait = min(backoff_sec, MAX_BACKOFF)
 
             if DEBUG_MODE:
                 print(f'Backing off due to failures ({self._consecutive_failures})\n')

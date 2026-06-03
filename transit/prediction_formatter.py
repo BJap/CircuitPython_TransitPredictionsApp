@@ -22,16 +22,15 @@ class TransitPredictionFormatter:
         :return: the formatted route text as a list of str
         """
 
-        prediction_count = len(route.predictions)
-        n = min(max_predictions, prediction_count)
+        formatted_list = []
 
-        for i in range(n):
-            route.predictions[i] = f'{route.predictions[i]}m'
+        for minutes in route.predictions[:max_predictions]:
+            if minutes == 0:
+                formatted_list.append("Now")
+            else:
+                formatted_list.append(f"{minutes}m")
 
-        if route.predictions[0] == '0m':
-            route.predictions[0] = 'Now'
-
-        route_predictions = ' '.join(route.predictions[:n])
+        route_predictions = ' '.join(formatted_list)
 
         if show_title:
             line_text = f'{route.route_code} {route.title}'

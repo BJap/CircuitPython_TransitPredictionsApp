@@ -17,7 +17,7 @@ from display.configuration_matrix_64_x_32_fancy import ConfigurationMatrix64X32F
 from network import Wifi
 
 RESET_DELAY_SEC = 30
-RUN_DELAY_SEC = 0
+RUN_DELAY_SEC = 5
 
 try:
     # Sometimes while coding things can hang up so good to leave a gap of time to wait
@@ -49,6 +49,7 @@ except Exception as e:
     if DEBUG_MODE:
         print(f'Error:\n {str(e)}')
         print(f'Resetting microcontroller in {RESET_DELAY_SEC} seconds')
+
     # Comment out these if doing active development in case of failure to the program ends.
     sleep(RESET_DELAY_SEC)
     reset()

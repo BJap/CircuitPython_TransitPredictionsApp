@@ -106,6 +106,9 @@ class Sign(Display):
         for label in self._labels:
             label.text = ''
 
+        if not text:
+            return
+
         n = min(len(self._labels), len(text))
         i = 0
 

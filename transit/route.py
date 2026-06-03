@@ -18,7 +18,7 @@ class Route:
 
         self.route_code = route_code
         self.title = title
-        self.predictions: [int] = []
+        self.predictions: list[int] = []
 
     def add_prediction(self, minutes: int):
         """
