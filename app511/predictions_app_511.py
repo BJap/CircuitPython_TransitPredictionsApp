@@ -22,6 +22,7 @@ RESPONSE_FORMAT = 'json'
 # UPDATE
 
 ERROR_REFRESH_SEC = 30
+MAX_BACKOFF = 600
 MAX_REFRESH_SEC = 60
 MIN_REFRESH_SEC = 20
 
@@ -48,6 +49,8 @@ class TransitPredictionsApp511(TransitPredictionsApp):
 
         self._api_config = api_config
         self._display_config = display_config
+
+        self._consecutive_failures = 0
 
         self._display = display_config.get_display()
         self._display.show(['Predictions', 'for SF MUNI', 'using API', '511.org'])
@@ -126,12 +129,16 @@ class TransitPredictionsApp511(TransitPredictionsApp):
         if TransitAPI511.check_for_success(self._status_code):
             data = decompress(response.content, 31)[3:].decode('utf-8')
             self._data = self._source.get_data_handler().parse_data(data)
-            
+            self._consecutive_failures = 0
+
             # Free up all this memory or the next poll's allocation will fail on some devices.
             del data
-        elif DEBUG_MODE:
-            print(f'Status code: {self._status_code}\n')
-            print(f'Reason: {self._reason}\n')
+        else:
+            self._consecutive_failures += 1
+
+            if DEBUG_MODE:
+                print(f'Status code: {self._status_code}\n')
+                print(f'Reason: {self._reason}\n')
 
         response.close()
 
@@ -155,7 +162,13 @@ class TransitPredictionsApp511(TransitPredictionsApp):
         if not self._data:
             self._display.show(['Network Error', f'{self._status_code}', f'{self._reason}'])
 
-            return ERROR_REFRESH_SEC
+            backoff_sec = (2 ** (self._consecutive_failures - 1)) * ERROR_REFRESH_SEC
+            actual_wait = min(MAX_BACKOFF, max_backoff)
+
+            if DEBUG_MODE:
+                print(f'Backing off due to failures ({self._consecutive_failures})\n')
+
+            return actual_wait
 
         self._display.show(self._get_predictions())
 

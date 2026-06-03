@@ -39,9 +39,9 @@ class TransitConfig511:
 
         return TransitConfig511(
             getenv('511_API_KEY'),
-            getenv('511_API_LIMIT', '60'),      # rate limit (default every 60 seconds as per documentation minimum)
-            getenv('511_TRANSIT_AGENCY'),       # agency
-            getenv('511_TRANSIT_DIRECTIONS'),   # directions
-            getenv('511_TRANSIT_ROUTE_CODES'),  # route_codes
-            getenv('511_TRANSIT_STOP_CODE')     # stop_code
+            getenv('511_API_LIMIT', '60'),             # rate limit (default every 60 seconds as per documentation minimum)
+            getenv('511_TRANSIT_AGENCY', 'SF'),        # agency
+            getenv('511_TRANSIT_DIRECTIONS', 'OB'),    # directions
+            getenv('511_TRANSIT_ROUTE_CODES', 'K,N'),  # route_codes
+            getenv('511_TRANSIT_STOP_CODE', '16995')   # stop_code
         )
