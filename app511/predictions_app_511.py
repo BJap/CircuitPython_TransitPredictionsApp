@@ -13,6 +13,7 @@ from app511.api_511 import TransitAPI511
 from app511.config_511 import TransitConfig511
 from config import DEBUG_MODE
 from display.display import DisplayConfigration
+from network import Wifi
 from transit.predictions_app import TransitPredictionsApp
 
 # SOURCE
@@ -22,8 +23,9 @@ RESPONSE_FORMAT = 'json'
 # UPDATE
 
 ERROR_REFRESH_SEC = 30
+MAX_BACKOFF = 600
 MAX_REFRESH_SEC = 60
-MIN_REFRESH_SEC = 10
+MIN_REFRESH_SEC = 20
 
 
 class TransitPredictionsApp511(TransitPredictionsApp):
@@ -48,6 +50,8 @@ class TransitPredictionsApp511(TransitPredictionsApp):
 
         self._api_config = api_config
         self._display_config = display_config
+
+        self._consecutive_failures = 0
 
         self._display = display_config.get_display()
         self._display.show(['Predictions', 'for SF MUNI', 'using API', '511.org'])
@@ -75,6 +79,8 @@ class TransitPredictionsApp511(TransitPredictionsApp):
             for route_code in self._api_config.route_codes:
                 if route_code in predictions:
                     route = predictions[route_code]
+                    route.predictions.sort()
+
                     route_text = self._formatter.format(
                         route,
                         self._display_config.maximum_predictions,
@@ -84,12 +90,7 @@ class TransitPredictionsApp511(TransitPredictionsApp):
                     prediction_text.extend(route_text)
 
         if DEBUG_MODE:
-            if prediction_text:
-                for text in prediction_text:
-                    print(text)
-
-                print('')
-            else:
+            if not prediction_text:
                 print('No predictions available\n')
 
         return prediction_text
@@ -122,25 +123,59 @@ class TransitPredictionsApp511(TransitPredictionsApp):
         Polls for prediction data and stores it at class level.
         """
 
-        # Wipe the existing data and fetch new data.
+        # Reset the existing data.
+        data = None
+        response = None
         self._data = None
-        response = self._source.get_predictions((self._api_config.agency, self._api_config.stop_code))
-        self._status_code = response.status_code
-        self._reason = response.reason.decode('utf-8')
+        self._status_code = "Connection Failed"
+        self._reason = "Timeout/No Response"
 
-        if TransitAPI511.check_for_success(self._status_code):
-            data = decompress(response.content, 31)[3:].decode('utf-8')
-            self._data = self._source.get_data_handler().parse_data(data)
-        elif DEBUG_MODE:
-            print(f'Status code: {self._status_code}\n')
-            print(f'Reason: {self._reason}\n')
+        # Fetch new data
+        try:
+            Wifi.ensure_connected()
 
-        response.close()
+            response = self._source.get_predictions((self._api_config.agency, self._api_config.stop_code))
+            self._status_code = response.status_code
 
-        # Free up all this memory or the next poll's allocation will fail on some devices.
-        del response
-        del data
-        collect()
+            if isinstance(response.reason, bytes):
+                self._reason = response.reason.decode('utf-8')
+            else:
+                self._reason = response.reason
+
+            if TransitAPI511.check_for_success(self._status_code):
+                data = decompress(response.content, 31)[3:].decode('utf-8')
+                self._data = self._source.get_data_handler().parse_data(data)
+                self._consecutive_failures = 0
+            else:
+                self._consecutive_failures += 1
+
+                if DEBUG_MODE:
+                    print(f'Status code: {self._status_code}\n')
+                    print(f'Reason: {self._reason}\n')
+
+        except Exception as e:
+            # Catch raw socket/network drop exceptions before an HTTP response is ever made.
+            self._consecutive_failures += 1
+            self._status_code = "Network Error"
+            self._reason = str(e)
+
+            if DEBUG_MODE:
+                print(f'Socket exception caught during fetch: {e}\n')
+
+        finally:
+            # Free up all this memory or the next poll's allocation will fail on some devices.
+            if response is not None:
+                try:
+                    response.close()
+                except Exception:
+                    pass
+
+                del response
+
+            if data is not None:
+                del data
+
+            collect()
 
     def update(self) -> int:
         """
@@ -158,8 +193,17 @@ class TransitPredictionsApp511(TransitPredictionsApp):
         if not self._data:
             self._display.show(['Network Error', f'{self._status_code}', f'{self._reason}'])
 
-            return ERROR_REFRESH_SEC
+            backoff_sec = (2 ** (self._consecutive_failures - 1)) * ERROR_REFRESH_SEC
+            actual_wait = min(backoff_sec, MAX_BACKOFF)
+
+            if DEBUG_MODE:
+                print(f'Backing off due to failures ({self._consecutive_failures})\n')
+
+            return actual_wait
 
         self._display.show(self._get_predictions())
 
-        return self._get_refresh_interval()
+        if DEBUG_MODE:
+            return self._get_refresh_interval()
+        else:
+            return self._api_config.rate

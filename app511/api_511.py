@@ -40,39 +40,62 @@ class _JsonHandler(TransitDataHandler):
         :return: the predictions that are available if any
         """
 
-        predictions = {}
-        now = _JsonHandler._extract_now(data)
+        if not data or not isinstance(data, dict):
+            return {}
 
         # The list of upcoming visits to the stop in the predictions.
-        visits: list = data['ServiceDelivery']['StopMonitoringDelivery']['MonitoredStopVisit']
+        service_delivery: dict = data.get("ServiceDelivery", {})
+        stop_monitoring_delivery: dict = service_delivery.get("StopMonitoringDelivery", {})
+        visits: list = stop_monitoring_delivery.get("MonitoredStopVisit", [])
+
+        if not visits:
+            return {}
 
         route_codes: list[str] = keys[0]
         directions: list[str] = keys[1]
+        now = _JsonHandler._extract_now(data)
+        predictions = {}
 
         # Iterate over all the upcoming visits and gather predictions.
         for visit in visits:
-            trip: dict = visit['MonitoredVehicleJourney']
-            route_code: str = trip['LineRef']
+            trip: dict = visit.get('MonitoredVehicleJourney', {})
+            route_code: str = trip.get('LineRef')
+            direction: str = trip.get('DirectionRef')
 
-            # The route code is not of interest in the trip or not in the correct direction(s).
-            if route_code not in route_codes or trip['DirectionRef'] not in directions:
+            # The route code or direction does not exist.
+            if not route_code or not direction:
                 continue
 
-            # The predictions don't have the route in it yet, add it.
-            if route_code not in predictions:
-                title: str = trip['PublishedLineName']
-                route = Route(route_code, title)
-                predictions[route_code] = route
+            # The route code is not of interest in the trip or not in the correct direction(s).
+            if route_code not in route_codes or direction not in directions:
+                continue
 
             # The predicted time of the visit.
-            prediction_info: dict = trip['MonitoredCall']
-            arrival_time: str = prediction_info['ExpectedArrivalTime']
+            prediction_info: dict = trip.get('MonitoredCall', {})
+            arrival_time: str = prediction_info.get('ExpectedArrivalTime')
+
+            if not arrival_time:
+                continue
+
             # CircuitPython only parses DateTime from iso formats without the 'T' and 'Z' in them.
             arrival_time = arrival_time.replace('T', ' ').replace('Z', '')
-            prediction = datetime.fromisoformat(arrival_time)
+
+            try:
+                prediction = datetime.fromisoformat(arrival_time)
+            except ValueError:
+                continue
+
+            if prediction <= now:
+                continue
 
             # The minutes until the trip's arrival.
             minutes = int((prediction - now).seconds / 60)
+
+            # The predictions don't have the route in it yet, add it.
+            if route_code not in predictions:
+                title: str = trip.get('PublishedLineName', route_code)
+                route = Route(route_code, title)
+                predictions[route_code] = route
 
             # Add the minutes to the set of predictions.
             predictions[route_code].add_prediction(minutes)
@@ -90,50 +113,119 @@ class _JsonHandler(TransitDataHandler):
         :return: the next arrival time or 0 if there are no predictions
         """
 
-        now = _JsonHandler._extract_now(data)
+        if not data or not isinstance(data, dict):
+            return None
 
         # The list of upcoming visits to the stop in the predictions.
-        visits: list = data['ServiceDelivery']['StopMonitoringDelivery']['MonitoredStopVisit']
+        service_delivery: dict = data.get("ServiceDelivery", {})
+        stop_monitoring_delivery: dict = service_delivery.get("StopMonitoringDelivery", {})
+        visits: list = stop_monitoring_delivery.get("MonitoredStopVisit", [])
+
+        if not visits:
+            return None
 
         route_codes: list[str] = keys[0]
         directions: list[str] = keys[1]
+        now = _JsonHandler._extract_now(data)
+        soonest_seconds = None
 
         # Iterate over all the upcoming visits and find the soonest arrival of desired route codes.
         for visit in visits:
-            trip: dict = visit['MonitoredVehicleJourney']
-            route_code: str = trip['LineRef']
+            trip: dict = visit.get('MonitoredVehicleJourney', {})
+            route_code: str = trip.get('LineRef')
+            direction: str = trip.get('DirectionRef')
 
-            # The route code is not of interest in the trip or it not in the correct direction(s).
-            if route_code not in route_codes or trip['DirectionRef'] not in directions:
+            # The route code or direction does not exist.
+            if not route_code or not direction:
+                continue
+
+            # The route code is not of interest in the trip or not in the correct direction(s).
+            if route_code not in route_codes or direction not in directions:
                 continue
 
             # The predicted time of the visit.
-            prediction_info: dict = trip['MonitoredCall']
-            arrival_time: str = prediction_info['ExpectedArrivalTime']
+            prediction_info: dict = trip.get('MonitoredCall', {})
+            arrival_time: str = prediction_info.get('ExpectedArrivalTime')
+
+            if not arrival_time:
+                continue
+
             # CircuitPython only parses DateTime from iso formats without the 'T' and 'Z' in them.
             arrival_time = arrival_time.replace('T', ' ').replace('Z', '')
-            prediction = datetime.fromisoformat(arrival_time)
 
-            # Return how many seconds until the next arrival.
-            return int((prediction - now).seconds)
+            try:
+                prediction = datetime.fromisoformat(arrival_time)
+            except ValueError:
+                continue
 
-        # There are no predictions of interest, return None.
-        return None
+            if prediction <= now:
+                continue
+
+            seconds_diff = int((prediction - now).seconds)
+
+            # Keep the smallest wait time value found across all valid routes
+            if soonest_seconds is None or seconds_diff < soonest_seconds:
+                soonest_seconds = seconds_diff
+
+        return soonest_seconds
 
     @staticmethod
     def _extract_now(data: dict) -> datetime:
+        """
+        Takes all the prediction JSON and collects the service's current date and time.
+
+        :param data: the data to parse
+        :return: the datetime
+        """
+
+        if not data or not isinstance(data, dict):
+            return datetime.now()
+
         # The time the predictions data was sent.
         # This is used because some predictions come back with a 'created' unix time stamp
         # of 0, so they are inaccurate to use for temporal subtraction so a unified baseline
         # of 'now' is used to get around this flaw in the API response.
-        data_time: str = data['ServiceDelivery']['StopMonitoringDelivery']['ResponseTimestamp']
+        service_delivery: dict = data.get("ServiceDelivery", {})
+        stop_monitoring_delivery: dict = service_delivery.get("StopMonitoringDelivery", {})
+        data_time: str = stop_monitoring_delivery.get('ResponseTimestamp')
+
+        if not data_time:
+            return datetime.now()
+
         # CircuitPython only parses DateTime from iso formats without the 'T' and 'Z' in them.
         data_time = data_time.replace('T', ' ').replace('Z', '')
 
-        return datetime.fromisoformat(data_time)
+        try:
+            api_now = datetime.fromisoformat(data_time)
+
+            # Update the device real time clock to the one from 511.org.
+            # This keeps datetime.now() from crashing and gives a
+            # non-arbitrary time to fall back on.
+            import rtc
+
+            try:
+                rtc.RTC().datetime = time_tuple = (
+                        api_now.year, api_now.month, api_now.day,
+                        api_now.hour, api_now.minute, api_now.second,
+                        0, -1, -1
+                )
+            except Exception:
+                pass
+
+            return api_now
+
+        except ValueError:
+            return datetime.now()
 
     @staticmethod
     def parse_data(data: str) -> dict:
+        """
+        Loads the JSON data into a dictionary.
+
+        :param data: the JSON data to load
+        :return: the data dictionary
+        """
+
         return loads(data)
 
 
@@ -192,4 +284,4 @@ class TransitAPI511(TransitAPI):
         parameters = f'agency={agency}&stopCode={stop_code}'
         endpoint = self._get_command_url(command, parameters)
 
-        return self._requests.get(endpoint)
+        return self._requests.get(endpoint, timeout=10)
