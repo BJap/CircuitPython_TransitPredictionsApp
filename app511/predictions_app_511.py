@@ -143,7 +143,7 @@ class TransitPredictionsApp511(TransitPredictionsApp):
                 self._reason = response.reason
 
             if TransitAPI511.check_for_success(self._status_code):
-                data = decompress(response.content, 31)[3:].decode('utf-8')
+                data = decompress(response.content, 31).decode('utf-8')
                 self._data = self._source.get_data_handler().parse_data(data)
                 self._consecutive_failures = 0
             else:
