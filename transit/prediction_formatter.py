@@ -24,14 +24,17 @@ class TransitPredictionFormatter:
 
         formatted_list = []
 
+        # Each prediction the display has room for.
         for minutes in route.predictions[:max_predictions]:
+            # The arrival is now.
             if minutes == 0:
-                formatted_list.append("Now")
+                formatted_list.append('Now')
             else:
-                formatted_list.append(f"{minutes}m")
+                formatted_list.append(f'{minutes}m')
 
         route_predictions = ' '.join(formatted_list)
 
+        # The route name is shown, and takes a line of its own above the predictions.
         if show_title:
             line_text = f'{route.route_code} {route.title}'
 

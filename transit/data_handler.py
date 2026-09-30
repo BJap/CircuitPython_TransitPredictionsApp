@@ -18,7 +18,7 @@ class TransitDataHandler:
         :return: the predictions that are available if any
         """
 
-        raise NotImplementedError("Subclasses of TransitDataHandler must implement the extract_predictions() method")
+        raise NotImplementedError('Subclasses of TransitDataHandler must implement the extract_predictions() method')
 
     @staticmethod
     def extract_seconds_soonest(data: dict, keys: tuple) -> int | None:
@@ -31,7 +31,7 @@ class TransitDataHandler:
         """
 
         raise NotImplementedError(
-            "Subclasses of TransitDataHandler must implement the extract_seconds_soonest() method"
+            'Subclasses of TransitDataHandler must implement the extract_seconds_soonest() method'
         )
 
     @staticmethod
@@ -42,4 +42,4 @@ class TransitDataHandler:
         :return: the data
         """
 
-        raise NotImplementedError("Subclasses of TransitDataHandler must implement the parse_data() method")
+        raise NotImplementedError('Subclasses of TransitDataHandler must implement the parse_data() method')

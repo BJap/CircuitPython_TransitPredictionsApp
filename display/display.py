@@ -22,10 +22,10 @@ class Display:
         :param text: an array of text to display
         """
 
-        raise NotImplementedError("Subclasses of Display must implement the show() method")
+        raise NotImplementedError('Subclasses of Display must implement the show() method')
 
 
-class DisplayConfigration:
+class DisplayConfiguration:
     """
     Used to create the display and hold its configuration
     """
@@ -40,7 +40,7 @@ class DisplayConfigration:
         :return: the display object
         """
 
-        raise NotImplementedError("Subclasses of DisplayConfigration must implement the get_display() method")
+        raise NotImplementedError('Subclasses of DisplayConfiguration must implement the get_display() method')
 
     @staticmethod
     def get_formatter() -> TransitPredictionFormatter:
@@ -60,7 +60,7 @@ class DisplayConfigration:
         :return: the prediction count
         """
 
-        raise NotImplementedError("Subclasses of DisplayConfigration must implement the prediction_count property")
+        raise NotImplementedError('Subclasses of DisplayConfiguration must implement the maximum_predictions property')
 
     @property
     def show_titles(self) -> bool:
@@ -70,7 +70,7 @@ class DisplayConfigration:
         :return: true if the titles should be shown
         """
 
-        raise NotImplementedError("Subclasses of DisplayConfigration must implement the show_titles property")
+        raise NotImplementedError('Subclasses of DisplayConfiguration must implement the show_titles property')
 
 
 class Console(Display):
@@ -80,6 +80,7 @@ class Console(Display):
     """
 
     def show(self, text: list[str]):
+        # Each line of the text, one to a line of the console.
         for label in text:
             print(label)
 
@@ -106,6 +107,7 @@ class Sign(Display):
         for label in self._labels:
             label.text = ''
 
+        # There is nothing to show.
         if not text:
             return
 

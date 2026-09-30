@@ -15,4 +15,4 @@ class TransitPredictionsApp:
         :return: the time to wait until the next update
         """
 
-        raise NotImplementedError("Subclasses of TransitPredictionsApp must implement the update() method")
+        raise NotImplementedError('Subclasses of TransitPredictionsApp must implement the update() method')

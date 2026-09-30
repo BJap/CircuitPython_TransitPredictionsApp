@@ -11,6 +11,7 @@ from time import sleep
 
 # local
 from config import DEBUG_MODE
+from logger import log
 from app511.predictions_app_511 import TransitPredictionsApp511
 from display.configuration_console import ConfigurationConsole
 from display.configuration_matrix_64_x_32_fancy import ConfigurationMatrix64X32Fancy
@@ -31,6 +32,7 @@ try:
 
     requests = Wifi.get_session()
 
+    # Logging is on, so the console stands in for the sign.
     if DEBUG_MODE:
         display_config = ConfigurationConsole()
     else:
@@ -38,17 +40,16 @@ try:
 
     app = TransitPredictionsApp511(requests, display_config)
 
+    # The app runs until the board is reset.
     while True:
         wait = app.update()
 
-        if DEBUG_MODE:
-            print(f'Refreshing predictions in {wait} seconds\n')
+        log(f'Refreshing predictions in {wait} seconds\n')
 
         sleep(wait)
 except Exception as e:
-    if DEBUG_MODE:
-        print(f'Error:\n {str(e)}')
-        print(f'Resetting microcontroller in {RESET_DELAY_SEC} seconds')
+    log(f'Error:\n {str(e)}')
+    log(f'Resetting microcontroller in {RESET_DELAY_SEC} seconds')
 
     # Comment out these if doing active development in case of failure to the program ends.
     sleep(RESET_DELAY_SEC)

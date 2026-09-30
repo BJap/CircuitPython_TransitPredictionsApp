@@ -40,14 +40,16 @@ class _JsonHandler(TransitDataHandler):
         :return: the predictions that are available if any
         """
 
+        # The response is missing or is not a JSON object.
         if not data or not isinstance(data, dict):
             return {}
 
         # The list of upcoming visits to the stop in the predictions.
-        service_delivery: dict = data.get("ServiceDelivery", {})
-        stop_monitoring_delivery: dict = service_delivery.get("StopMonitoringDelivery", {})
-        visits: list = stop_monitoring_delivery.get("MonitoredStopVisit", [])
+        service_delivery: dict = data.get('ServiceDelivery', {})
+        stop_monitoring_delivery: dict = service_delivery.get('StopMonitoringDelivery', {})
+        visits: list = stop_monitoring_delivery.get('MonitoredStopVisit', [])
 
+        # The stop has no upcoming visits in the response.
         if not visits:
             return {}
 
@@ -74,6 +76,7 @@ class _JsonHandler(TransitDataHandler):
             prediction_info: dict = trip.get('MonitoredCall', {})
             arrival_time: str = prediction_info.get('ExpectedArrivalTime')
 
+            # The visit states no expected arrival time.
             if not arrival_time:
                 continue
 
@@ -85,6 +88,7 @@ class _JsonHandler(TransitDataHandler):
             except ValueError:
                 continue
 
+            # The arrival has already passed.
             if prediction <= now:
                 continue
 
@@ -113,14 +117,16 @@ class _JsonHandler(TransitDataHandler):
         :return: the next arrival time or 0 if there are no predictions
         """
 
+        # The response is missing or is not a JSON object.
         if not data or not isinstance(data, dict):
             return None
 
         # The list of upcoming visits to the stop in the predictions.
-        service_delivery: dict = data.get("ServiceDelivery", {})
-        stop_monitoring_delivery: dict = service_delivery.get("StopMonitoringDelivery", {})
-        visits: list = stop_monitoring_delivery.get("MonitoredStopVisit", [])
+        service_delivery: dict = data.get('ServiceDelivery', {})
+        stop_monitoring_delivery: dict = service_delivery.get('StopMonitoringDelivery', {})
+        visits: list = stop_monitoring_delivery.get('MonitoredStopVisit', [])
 
+        # The stop has no upcoming visits in the response.
         if not visits:
             return None
 
@@ -147,6 +153,7 @@ class _JsonHandler(TransitDataHandler):
             prediction_info: dict = trip.get('MonitoredCall', {})
             arrival_time: str = prediction_info.get('ExpectedArrivalTime')
 
+            # The visit states no expected arrival time.
             if not arrival_time:
                 continue
 
@@ -158,6 +165,7 @@ class _JsonHandler(TransitDataHandler):
             except ValueError:
                 continue
 
+            # The arrival has already passed.
             if prediction <= now:
                 continue
 
@@ -178,6 +186,7 @@ class _JsonHandler(TransitDataHandler):
         :return: the datetime
         """
 
+        # The response is missing or is not a JSON object.
         if not data or not isinstance(data, dict):
             return datetime.now()
 
@@ -185,10 +194,11 @@ class _JsonHandler(TransitDataHandler):
         # This is used because some predictions come back with a 'created' unix time stamp
         # of 0, so they are inaccurate to use for temporal subtraction so a unified baseline
         # of 'now' is used to get around this flaw in the API response.
-        service_delivery: dict = data.get("ServiceDelivery", {})
-        stop_monitoring_delivery: dict = service_delivery.get("StopMonitoringDelivery", {})
+        service_delivery: dict = data.get('ServiceDelivery', {})
+        stop_monitoring_delivery: dict = service_delivery.get('StopMonitoringDelivery', {})
         data_time: str = stop_monitoring_delivery.get('ResponseTimestamp')
 
+        # The response states no timestamp.
         if not data_time:
             return datetime.now()
 
@@ -247,7 +257,7 @@ class TransitAPI511(TransitAPI):
         self._format = format_
         self._requests = requests
 
-    def _get_command_url(self, command, parameters):
+    def _get_command_url(self, command: str, parameters: str) -> str:
         """
         Generates the url with which to make the request.
 
@@ -265,6 +275,7 @@ class TransitAPI511(TransitAPI):
         :return: the data handler
         """
 
+        # The data format is JSON.
         if self._format == 'json':
             return _JsonHandler()
         else:
