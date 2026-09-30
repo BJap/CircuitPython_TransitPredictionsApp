@@ -26,21 +26,31 @@ from adafruit_display_text.label import Label
 from adafruit_matrixportal.matrix import Matrix
 
 # local
-from display.display import Display, DisplayConfigration, Sign
+from display.display import Display, DisplayConfiguration, Sign
 
-COLOR_SEPARATOR = 0x00071F
+# COLOR
+
 COLOR_LINE_TEXT = 0x4F1400
 COLOR_PREDICTION_TEXT = 0x001800
+COLOR_SEPARATOR = 0x00071F
 
-PANEL_WIDTH = 64
-PANEL_HEIGHT = 32
+# PANEL
+
+PANEL_HEIGHT_PX = 32
+PANEL_WIDTH_PX = 64
+
+# TEXT
 
 TEXT_FONT = 'fonts/5x7.bdf'
-TEXT_FONT_WIDTH = 5
-TEXT_FONT_HEIGHT = 7
+TEXT_FONT_HEIGHT_PX = 7
+TEXT_FONT_WIDTH_PX = 5
 
 
-class ConfigurationMatrix64X32Simple(DisplayConfigration):
+class ConfigurationMatrix64X32Simple(DisplayConfiguration):
+    """
+    Shows four rows of predictions on a 64x32 matrix with no line names, at most two predictions per transit line.
+    """
+
     @staticmethod
     def get_display() -> Display:
         font = bitmap_font.load_font(TEXT_FONT)
@@ -55,9 +65,9 @@ class ConfigurationMatrix64X32Simple(DisplayConfigration):
         label2 = Label(font)
         label2.color = COLOR_LINE_TEXT
         label2.x = 0
-        label2.y = label1.y + TEXT_FONT_HEIGHT + 1
+        label2.y = label1.y + TEXT_FONT_HEIGHT_PX + 1
 
-        middle = int(PANEL_HEIGHT / 2)
+        middle = int(PANEL_HEIGHT_PX / 2)
 
         # Transit line 3 and predictions
         label3 = Label(font)
@@ -69,7 +79,7 @@ class ConfigurationMatrix64X32Simple(DisplayConfigration):
         label4 = Label(font)
         label4.color = COLOR_LINE_TEXT
         label4.x = 0
-        label4.y = label3.y + TEXT_FONT_HEIGHT + 1
+        label4.y = label3.y + TEXT_FONT_HEIGHT_PX + 1
 
         g = Group()
         g.append(label1)

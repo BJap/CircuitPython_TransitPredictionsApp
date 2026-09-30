@@ -11,7 +11,7 @@ import wifi
 from adafruit_requests import Session
 
 # local
-from config import DEBUG_MODE
+from logger import log
 
 
 class Wifi:
@@ -35,13 +35,11 @@ class Wifi:
         cls._ssid = ssid
         cls._password = password
 
-        if DEBUG_MODE:
-            print(f'Connecting to WiFi using SSID: {ssid}')
+        log(f'Connecting to WiFi using SSID: {ssid}')
 
         wifi.radio.connect(ssid, password)
 
-        if DEBUG_MODE:
-            print(f'Connected to WiFi at IP address: {wifi.radio.ipv4_address}\n')
+        log(f'Connected to WiFi at IP address: {wifi.radio.ipv4_address}\n')
 
     @classmethod
     def ensure_connected(cls):
@@ -49,9 +47,9 @@ class Wifi:
         Checks if the Wi-Fi connection is alive, and forces a reconnect if it dropped.
         """
 
+        # The radio has lost its link and a network was configured to rejoin.
         if not wifi.radio.connected and cls._ssid is not None:
-            if DEBUG_MODE:
-                print("Wi-Fi hardware link lost! Re-establishing connection...")
+            log('Wi-Fi hardware link lost! Re-establishing connection...')
 
             wifi.radio.connect(cls._ssid, cls._password)
 

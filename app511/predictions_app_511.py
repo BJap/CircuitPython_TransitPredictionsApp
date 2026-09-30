@@ -12,7 +12,8 @@ from adafruit_requests import Session
 from app511.api_511 import TransitAPI511
 from app511.config_511 import TransitConfig511
 from config import DEBUG_MODE
-from display.display import DisplayConfigration
+from logger import log
+from display.display import DisplayConfiguration
 from network import Wifi
 from transit.predictions_app import TransitPredictionsApp
 
@@ -23,7 +24,7 @@ RESPONSE_FORMAT = 'json'
 # UPDATE
 
 ERROR_REFRESH_SEC = 30
-MAX_BACKOFF = 600
+MAX_BACKOFF_SEC = 600
 MAX_REFRESH_SEC = 60
 MIN_REFRESH_SEC = 20
 
@@ -36,7 +37,7 @@ class TransitPredictionsApp511(TransitPredictionsApp):
     def __init__(
             self,
             requests: Session,
-            display_config: DisplayConfigration,
+            display_config: DisplayConfiguration,
             api_config: TransitConfig511=TransitConfig511.from_environment()
     ):
         """
@@ -75,8 +76,11 @@ class TransitPredictionsApp511(TransitPredictionsApp):
         )
         prediction_text = []
 
+        # There are predictions to format.
         if predictions:
+            # Each route the configuration asks for, in the order it names them.
             for route_code in self._api_config.route_codes:
+                # This route is one the predictions hold.
                 if route_code in predictions:
                     route = predictions[route_code]
                     route.predictions.sort()
@@ -89,7 +93,9 @@ class TransitPredictionsApp511(TransitPredictionsApp):
 
                     prediction_text.extend(route_text)
 
+        # Logging is on.
         if DEBUG_MODE:
+            # Nothing was formatted.
             if not prediction_text:
                 print('No predictions available\n')
 
@@ -107,14 +113,13 @@ class TransitPredictionsApp511(TransitPredictionsApp):
             (self._api_config.route_codes, self._api_config.directions)
         )
 
+        # Nothing of interest is arriving soon.
         if not seconds_soonest:
-            if DEBUG_MODE:
-                print('There are no desired transit options arriving soon\n')
+            log('There are no desired transit options arriving soon\n')
 
             return MAX_REFRESH_SEC
 
-        if DEBUG_MODE:
-            print(f'The next desired transit option arrives in {seconds_soonest} seconds\n')
+        log(f'The next desired transit option arrives in {seconds_soonest} seconds\n')
 
         return max(min(seconds_soonest, MAX_REFRESH_SEC), MIN_REFRESH_SEC)
 
@@ -127,8 +132,8 @@ class TransitPredictionsApp511(TransitPredictionsApp):
         data = None
         response = None
         self._data = None
-        self._status_code = "Connection Failed"
-        self._reason = "Timeout/No Response"
+        self._status_code = 'Connection Failed'
+        self._reason = 'Timeout/No Response'
 
         # Fetch new data
         try:
@@ -137,11 +142,13 @@ class TransitPredictionsApp511(TransitPredictionsApp):
             response = self._source.get_predictions((self._api_config.agency, self._api_config.stop_code))
             self._status_code = response.status_code
 
+            # The reason arrived as bytes rather than as text.
             if isinstance(response.reason, bytes):
                 self._reason = response.reason.decode('utf-8')
             else:
                 self._reason = response.reason
 
+            # The request succeeded.
             if TransitAPI511.check_for_success(self._status_code):
                 data = decompress(response.content, 31).decode('utf-8')
                 self._data = self._source.get_data_handler().parse_data(data)
@@ -149,18 +156,16 @@ class TransitPredictionsApp511(TransitPredictionsApp):
             else:
                 self._consecutive_failures += 1
 
-                if DEBUG_MODE:
-                    print(f'Status code: {self._status_code}\n')
-                    print(f'Reason: {self._reason}\n')
+                log(f'Status code: {self._status_code}\n')
+                log(f'Reason: {self._reason}\n')
 
         except Exception as e:
             # Catch raw socket/network drop exceptions before an HTTP response is ever made.
             self._consecutive_failures += 1
-            self._status_code = "Network Error"
+            self._status_code = 'Network Error'
             self._reason = str(e)
 
-            if DEBUG_MODE:
-                print(f'Socket exception caught during fetch: {e}\n')
+            log(f'Socket exception caught during fetch: {e}\n')
 
         finally:
             # Free up all this memory or the next poll's allocation will fail on some devices.
@@ -172,6 +177,7 @@ class TransitPredictionsApp511(TransitPredictionsApp):
 
                 del response
 
+            # A response body was parsed as well.
             if data is not None:
                 del data
 
@@ -182,10 +188,9 @@ class TransitPredictionsApp511(TransitPredictionsApp):
         Updates predictions and the display with these new predictions.
         """
 
-        if DEBUG_MODE:
-            print(
-                f'Getting predictions for agency {self._api_config.agency} for stop_code {self._api_config.stop_code}'
-            )
+        log(
+            f'Getting predictions for agency {self._api_config.agency} for stop_code {self._api_config.stop_code}'
+        )
 
         self._poll()
 
@@ -194,15 +199,15 @@ class TransitPredictionsApp511(TransitPredictionsApp):
             self._display.show(['Network Error', f'{self._status_code}', f'{self._reason}'])
 
             backoff_sec = (2 ** (self._consecutive_failures - 1)) * ERROR_REFRESH_SEC
-            actual_wait = min(backoff_sec, MAX_BACKOFF)
+            actual_wait = min(backoff_sec, MAX_BACKOFF_SEC)
 
-            if DEBUG_MODE:
-                print(f'Backing off due to failures ({self._consecutive_failures})\n')
+            log(f'Backing off due to failures ({self._consecutive_failures})\n')
 
             return actual_wait
 
         self._display.show(self._get_predictions())
 
+        # Logging is on, so the wait follows the predictions.
         if DEBUG_MODE:
             return self._get_refresh_interval()
         else:

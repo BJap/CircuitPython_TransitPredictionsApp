@@ -7,10 +7,14 @@ hardware used if not the same as below.
 """
 
 # local
-from display.display import Console, Display, DisplayConfigration
+from display.display import Console, Display, DisplayConfiguration
 
 
-class ConfigurationConsole(DisplayConfigration):
+class ConfigurationConsole(DisplayConfiguration):
+    """
+    Prints predictions to the REPL console, at most five per transit line, with the line names shown.
+    """
+
     @staticmethod
     def get_display() -> Display:
         return Console()

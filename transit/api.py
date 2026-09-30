@@ -31,7 +31,7 @@ class TransitAPI:
         :return: the data handler
         """
 
-        raise NotImplementedError("Subclasses of TransitAPI must implement the get_data_handler() method")
+        raise NotImplementedError('Subclasses of TransitAPI must implement the get_data_handler() method')
 
     def get_predictions(self, config: tuple[str, ...]) -> Response:
         """
@@ -41,4 +41,4 @@ class TransitAPI:
         :return: the request response
         """
 
-        raise NotImplementedError("Subclasses of TransitAPI must implement the get_predictions() method")
+        raise NotImplementedError('Subclasses of TransitAPI must implement the get_predictions() method')
